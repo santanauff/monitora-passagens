@@ -1,0 +1,47 @@
+# ============================================================
+# Monitor de passagens — Rio de Janeiro -> China (4 pessoas)
+# ============================================================
+
+origem: GIG            # Galeão (voos internacionais saem daqui)
+adultos: 4
+moeda: BRL
+idioma: pt-br
+pais: br
+
+# Cada destino pode agrupar mais de um aeroporto (separados por vírgula).
+destinos:
+  Pequim: "PEK,PKX"    # Capital + Daxing
+  Xangai: "PVG,SHA"    # Pudong + Hongqiao
+  Hong Kong: "HKG"
+
+# Data alvo (a que você realmente quer)
+ida_principal: "2027-05-12"
+volta_principal: "2027-05-28"
+
+# Flexibilidade: +/- N dias em cada ponta
+flex_dias: 2
+# Passo da varredura da grade. 2 = testa 10, 12, 14 / 26, 28, 30 (cabe no plano grátis)
+#                              1 = testa todos os dias (precisa do plano pago)
+passo_grade: 2
+
+# ------------------------------------------------------------
+# Regras de "super promoção"
+# ------------------------------------------------------------
+alerta:
+  # Avisa se qualquer combinação ficar X% abaixo da mediana recente da data principal
+  queda_pct: 15
+  janela_mediana_dias: 14
+  # Avisa se o Google classificar o preço como "baixo"
+  usar_price_level_low: true
+  # Teto absoluto opcional (total p/ 4 pessoas, ida+volta). null = desligado
+  teto_absoluto: null
+  # Só reavisa a mesma combinação se cair mais X% desde o último aviso
+  reaviso_queda_pct: 5
+
+# ------------------------------------------------------------
+# Orçamento de buscas (SerpApi grátis = 250/mês)
+# ------------------------------------------------------------
+orcamento_mensal: 240
+
+# Manda um resumo todo dia (além dos avisos de promoção)
+resumo_diario: true
