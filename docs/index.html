@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor de passagens — Rio → China</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --tx:#e7e9ee; --mut:#8b92a1; --ac:#4f8cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--tx); }
+  main { max-width:1000px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--mut); margin-bottom:20px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+  .card { background:var(--card); border-radius:12px; padding:16px; }
+  .kpi .n { color:var(--mut); font-size:13px; }
+  .kpi .v { font-size:24px; font-weight:650; margin:4px 0; }
+  .kpi .d { font-size:13px; color:var(--mut); }
+  .down { color:#3ecf8e !important; } .up { color:#ff6b6b !important; }
+  h2 { font-size:16px; margin:24px 0 10px; }
+  .tabs button { background:#232733; color:var(--tx); border:0; border-radius:8px; padding:6px 12px; margin:0 6px 10px 0; cursor:pointer; }
+  .tabs button.on { background:var(--ac); }
+  table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+  th, td { padding:8px 6px; text-align:center; font-size:13px; }
+  th { color:var(--mut); font-weight:500; }
+  td a { color:inherit; text-decoration:none; display:block; border-radius:6px; padding:6px 2px; }
+  td.main a { outline:2px solid var(--ac); }
+  .foot { color:var(--mut); font-size:12px; margin-top:24px; }
+  .scroll { overflow-x:auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>✈️ Rio → China · 4 pessoas</h1>
+  <div class="sub" id="sub"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Preço da data principal ao longo do tempo (total p/ 4, ida+volta)</h2>
+    <canvas id="graf" height="110"></canvas>
+  </div>
+
+  <h2>Grade de datas flexíveis — último preço visto (clique para abrir no Google Flights)</h2>
+  <div class="tabs" id="tabs"></div>
+  <div class="card scroll"><table id="grade"></table></div>
+
+  <div class="foot" id="foot"></div>
+</main>
+<script>
+const D = {"serie": {"Pequim": [{"x": "2026-11-18", "y": 39363.0}], "Xangai": [{"x": "2026-11-18", "y": 39843.0}], "Hong Kong": [{"x": "2026-11-18", "y": 35404.0}]}, "grades": {"Pequim": [[null, null, null, null, null], [null, null, null, null, null], [null, null, {"p": 39363.0, "c": "Emirates", "l": "https://www.google.com/travel/flights?hl=pt-br&gl=br&curr=BRL&tfs=CBwQAhonEgoyMDI3LTA1LTEyagcIARIDR0lHcgcIARIDUEVLcgcIARIDUEtYGicSCjIwMjctMDUtMjhqBwgBEgNQRUtqBwgBEgNQS1hyBwgBEgNHSUdAAUABQAFAAUgBcAGYAQE&tfu=EgIIAQ", "q": "2026-11-18"}, null, null], [null, null, null, null, null], [null, null, null, null, null]], "Xangai": [[null, null, null, null, null], [null, null, null, null, null], [null, null, {"p": 39843.0, "c": "Emirates", "l": "https://www.google.com/travel/flights?hl=pt-br&gl=br&curr=BRL&tfs=CBwQAhonEgoyMDI3LTA1LTEyagcIARIDR0lHcgcIARIDUFZHcgcIARIDU0hBGicSCjIwMjctMDUtMjhqBwgBEgNQVkdqBwgBEgNTSEFyBwgBEgNHSUdAAUABQAFAAUgBcAGYAQE&tfu=EgIIAQ", "q": "2026-11-18"}, null, null], [null, null, null, null, null], [null, null, null, null, null]], "Hong Kong": [[null, null, null, null, null], [null, null, null, null, null], [null, null, {"p": 35404.0, "c": "Emirates", "l": "https://www.google.com/travel/flights?hl=pt-br&gl=br&curr=BRL&tfs=CBwQAhoeEgoyMDI3LTA1LTEyagcIARIDR0lHcgcIARIDSEtHGh4SCjIwMjctMDUtMjhqBwgBEgNIS0dyBwgBEgNHSUdAAUABQAFAAUgBcAGYAQE&tfu=EgIIAQ", "q": "2026-11-18"}, null, null], [null, null, null, null, null], [null, null, null, null, null]]}, "idas": ["2027-05-10", "2027-05-11", "2027-05-12", "2027-05-13", "2027-05-14"], "voltas": ["2027-05-26", "2027-05-27", "2027-05-28", "2027-05-29", "2027-05-30"], "principal": ["2027-05-12", "2027-05-28"], "atualizado": "17/11/2026 21:28", "uso": "3/240"};
+const brl = v => "R$ " + Math.round(v).toLocaleString("pt-BR");
+const dm = s => s.slice(8,10) + "/" + s.slice(5,7);
+const cores = ["#4f8cff", "#f5a524", "#3ecf8e", "#c17cff"];
+const destinos = Object.keys(D.serie);
+
+document.getElementById("sub").textContent =
+  `Data alvo: ida ${dm(D.principal[0])} · volta ${dm(D.principal[1])} (±2 dias) · atualizado ${D.atualizado}`;
+
+// KPIs: último preço da data principal + variação vs. dia anterior + menor da janela
+const kp = document.getElementById("kpis");
+destinos.forEach(k => {
+  const s = D.serie[k]; const ult = s.at(-1), ant = s.at(-2);
+  const todos = D.grades[k].flat().filter(Boolean).map(c => c.p);
+  const menor = todos.length ? Math.min(...todos) : null;
+  let delta = "";
+  if (ult && ant) {
+    const x = ult.y - ant.y;
+    delta = x === 0 ? "＝ estável" : `<span class="${x < 0 ? "down" : "up"}">${x < 0 ? "▼" : "▲"} ${brl(Math.abs(x))}</span> vs. ontem`;
+  }
+  kp.insertAdjacentHTML("beforeend", `<div class="card kpi"><div class="n">${k}</div>
+    <div class="v">${ult ? brl(ult.y) : "—"}</div>
+    <div class="d">${delta || "aguardando 2ª consulta"}</div>
+    <div class="d">menor na grade agora: ${menor ? brl(menor) : "—"}</div></div>`);
+});
+
+// Gráfico
+const labels = [...new Set(destinos.flatMap(k => D.serie[k].map(p => p.x)))].sort();
+new Chart(document.getElementById("graf"), {
+  type: "line",
+  data: { labels: labels.map(dm), datasets: destinos.map((k, i) => ({
+    label: k, borderColor: cores[i], backgroundColor: cores[i], tension: .25, spanGaps: true,
+    data: labels.map(x => (D.serie[k].find(p => p.x === x) || {}).y ?? null) })) },
+  options: { plugins: { legend: { labels: { color: "#e7e9ee" } },
+               tooltip: { callbacks: { label: c => `${c.dataset.label}: ${brl(c.parsed.y)}` } } },
+             scales: { x: { ticks: { color: "#8b92a1" }, grid: { color: "#232733" } },
+                       y: { ticks: { color: "#8b92a1", callback: v => brl(v) }, grid: { color: "#232733" } } } }
+});
+
+// Grade ida × volta com escala de cor (verde = barato)
+function grade(k) {
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.k === k));
+  const g = D.grades[k], vals = g.flat().filter(Boolean).map(c => c.p);
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const cor = p => { const t = mx > mn ? (p - mn) / (mx - mn) : .5;
+    return `hsl(${140 - t * 140} 55% ${22 + (1 - t) * 8}%)`; };
+  let h = `<tr><th>ida \\ volta</th>${D.voltas.map(v => `<th>${dm(v)}</th>`).join("")}</tr>`;
+  g.forEach((linha, i) => {
+    h += `<tr><th>${dm(D.idas[i])}</th>` + linha.map((c, j) => {
+      const main = D.idas[i] === D.principal[0] && D.voltas[j] === D.principal[1];
+      if (!c) return `<td class="${main ? "main" : ""}" style="color:#555">—</td>`;
+      return `<td class="${main ? "main" : ""}"><a href="${c.l}" target="_blank" style="background:${cor(c.p)}"
+        title="${c.c} · consultado em ${dm(c.q)}">${brl(c.p)}</a></td>`;
+    }).join("") + "</tr>";
+  });
+  document.getElementById("grade").innerHTML = h;
+}
+const tabs = document.getElementById("tabs");
+destinos.forEach(k => tabs.insertAdjacentHTML("beforeend", `<button data-k="${k}">${k}</button>`));
+tabs.onclick = e => e.target.dataset.k && grade(e.target.dataset.k);
+grade(destinos[0]);
+
+document.getElementById("foot").textContent =
+  `Fonte: Google Flights via SerpApi · buscas usadas no mês: ${D.uso} · célula com contorno azul = data principal`;
+</script>
+</body>
+</html>
