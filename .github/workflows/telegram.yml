@@ -1,0 +1,51 @@
+name: Comandos do Telegram
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"    # verifica o bot a cada ~5 min (o GitHub pode atrasar alguns minutos)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monitor-passagens   # mesmo grupo do monitor: nunca rodam ao mesmo tempo
+  cancel-in-progress: false
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Ler e executar comandos
+        env:
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          PAINEL_URL: ${{ vars.PAINEL_URL }}
+        run: |
+          set +e
+          python telegram_bot.py
+          code=$?
+          if [ $code -ne 0 ] && [ $code -ne 10 ]; then exit $code; fi
+          exit 0
+
+      - name: Salvar (só se algo mudou)
+        run: |
+          git config user.name  "monitor-bot"
+          git config user.email "monitor-bot@users.noreply.github.com"
+          git add data/ docs/
+          git diff --cached --quiet && exit 0
+          git commit -m "bot: comando telegram $(date -u +%F)"
+          git pull --rebase -q origin main && git push

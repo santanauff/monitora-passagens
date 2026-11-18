@@ -77,3 +77,18 @@ python monitor.py --modo varredura --mock /tmp/fx.json --sem-aviso --semana 47
 - `data/history.csv`: todas as consultas. Dá para abrir no Excel e fazer um gráfico.
 - `data/alerts.json`: o que já foi avisado (evita repetir aviso).
 - `data/usage.json`: buscas gastas por mês.
+
+## Comandos pelo Telegram
+
+Mande para o seu bot:
+
+| Comando | O que faz | Custo |
+|---|---|---|
+| `/status` | últimos preços gravados e menor já visto | grátis |
+| `/consultar` | busca agora a data principal nos 3 destinos | 3 buscas |
+| `/varredura` | busca as datas flexíveis | 12 a 35 buscas |
+| `/ajuda` | lista os comandos | grátis |
+
+A resposta chega em ~5–15 min: o GitHub verifica o bot a cada 5 minutos (workflow
+`telegram.yml`), e o agendamento do GitHub às vezes atrasa alguns minutos.
+Só o seu chat (`TELEGRAM_CHAT_ID`) é obedecido; mensagens de outras pessoas são ignoradas.

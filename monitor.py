@@ -62,6 +62,19 @@ def d(s: str) -> date:
     return date.fromisoformat(s)
 
 
+def horas(minutos) -> str:
+    try:
+        m = int(float(minutos))
+    except (TypeError, ValueError):
+        return "?"
+    return f"{m // 60}h{m % 60:02d}"
+
+
+def escalas_txt(n) -> str:
+    n = int(n)
+    return "voo direto" if n == 0 else f"{n} escala" + ("s" if n > 1 else "")
+
+
 # ------------------------------------------------------------------ orçamento
 class Orcamento:
     """Conta buscas por mês para não estourar a cota da SerpApi."""
@@ -400,7 +413,9 @@ def main() -> int:
             melhor_janela = min((float(h["preco_total"]) for h in hist if h["destino"] == r["destino"]),
                                 default=r["preco_total"])
             linhas.append(f"{r['destino']}: {brl(r['preco_total'])}{var}\n"
-                          f"  menor já visto na janela: {brl(melhor_janela)}")
+                          f"  ✈️ {r['cias']} · {escalas_txt(r['escalas'])} · {horas(r['duracao_ida_min'])} na ida\n"
+                          f"  menor já visto na janela: {brl(melhor_janela)}\n"
+                          f"  {r['link']}")
         url = os.getenv("PAINEL_URL")
         if url:
             linhas.append(f"\nPainel: {url}")
