@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: monitor-passagens   # mesmo grupo do monitor: nunca rodam ao mesmo tempo
+  group: telegram-bot        # grupo próprio: não pode cancelar a consulta diária na fila
   cancel-in-progress: false
 
 jobs:

@@ -19,7 +19,7 @@ permissions:
   contents: write            # para gravar o histórico de volta no repositório
 
 concurrency:
-  group: monitor-passagens
+  group: monitor-diario
   cancel-in-progress: false
 
 jobs:
